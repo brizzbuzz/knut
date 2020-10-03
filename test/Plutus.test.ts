@@ -29,16 +29,15 @@ describe("Plutus", () => {
   beforeEach(async () => {
     [deployer, ...others] = await ethers.getSigners();
 
-
     plutusFactory = new PlutusFactory(deployer);
     pUsdFactory = new PlutusUsDollarFactory(deployer);
     popFactory = new PlutusOptionPositionFactory(deployer);
     vaultFactory = new PlutusVaultFactory(deployer);
 
-    pUsd = await pUsdFactory.deploy();
-    pop = await popFactory.deploy();
-    plutus = await plutusFactory.deploy(pUsd.address, pop.address);
+    plutus = await plutusFactory.deploy();
     vault = await vaultFactory.attach(await plutus.Vault());
+    pop = await popFactory.attach(await plutus.POP());
+    pUsd = await pUsdFactory.attach(await plutus.pUSD());
   });
 
   it("sets pointers", async () => {

@@ -7,6 +7,8 @@ import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/payment/escrow/Escrow.sol";
 
 import "./PlutusVault.sol";
+import "./PlutusOptionPosition.sol";
+import "./PlutusUsDollar.sol";
 
 contract Plutus {
 
@@ -15,9 +17,9 @@ contract Plutus {
   Escrow public Vault;
   // Instantiate PVT Farm
 
-  constructor(IERC20 _pUSD, IERC721 _POP) public {
-    pUSD = _pUSD;
-    POP = _POP;
+  constructor() public {
+    pUSD = new PlutusUsDollar();
+    POP = new PlutusOptionPosition();
     Vault = new PlutusVault();
   }
 
