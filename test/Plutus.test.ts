@@ -1,20 +1,20 @@
 import {ethers} from "@nomiclabs/buidler";
 import {Plutus} from "../typechain/Plutus";
 import {Signer} from "ethers";
-import chai from "chai";
+import chai, {expect} from "chai";
 import {solidity} from "ethereum-waffle";
 import {PlutusFactory, PlutusOptionPositionFactory, PlutusUsDollarFactory, PlutusVaultFactory} from "../typechain";
 import {PlutusUsDollar} from "../typechain/PlutusUsDollar";
 import {PlutusOptionPosition} from "../typechain/PlutusOptionPosition";
-import {expect} from "chai";
 import {PlutusVault} from "../typechain/PlutusVault";
-const { balance, ether, expectEvent, expectRevert } = require('@openzeppelin/test-helpers');
 
+const {ether} = require('@openzeppelin/test-helpers');
 
 chai.use(solidity)
 
 describe("Plutus", () => {
   let deployer: Signer;
+  let others: Signer[];
 
   let plutusFactory: PlutusFactory;
   let pUsdFactory: PlutusUsDollarFactory;
@@ -27,7 +27,8 @@ describe("Plutus", () => {
   let vault: PlutusVault;
 
   beforeEach(async () => {
-    [deployer] = await ethers.getSigners();
+    [deployer, ...others] = await ethers.getSigners();
+
 
     plutusFactory = new PlutusFactory(deployer);
     pUsdFactory = new PlutusUsDollarFactory(deployer);
@@ -36,8 +37,8 @@ describe("Plutus", () => {
 
     pUsd = await pUsdFactory.deploy();
     pop = await popFactory.deploy();
-    vault = await vaultFactory.deploy();
-    plutus = await plutusFactory.deploy(pUsd.address, pop.address, vault.address);
+    plutus = await plutusFactory.deploy(pUsd.address, pop.address);
+    vault = await vaultFactory.attach(await plutus.Vault());
   });
 
   it("sets pointers", async () => {
@@ -46,11 +47,18 @@ describe("Plutus", () => {
     expect(await plutus.Vault()).to.equal(vault.address);
   });
 
-  it("only allows Plutus to control the Vault", async () => {
+  it("Plutus can deposit user funds into Vault", async () => {
     const amount = ether('42');
-    await vault.deposit(plutus.address, { value: amount });
-    expect(await vault.depositsOf(plutus.address)).to.equal(amount);
-    expectRevert(vault.deposit(pop.address, { value: amount }));
+    const payee = await others[0].getAddress();
+    await plutus.deposit(payee, {value: amount});
+    expect(await vault.depositsOf(payee)).to.equal(amount);
   });
+
+  it("Randos cannot deposit funds into the Vault", async () => {
+    const amount = ether('42');
+    const rando = await others[0].getAddress();
+    await expect(vault.deposit(rando, {value: amount}))
+      .to.be.revertedWith("Ownable: caller is not the owner")
+  })
 
 })
