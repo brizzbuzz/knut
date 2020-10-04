@@ -12,7 +12,7 @@ import "./PlutusUsDollar.sol";
 
 contract Plutus {
 
-  IERC20 public pUSD;
+  PlutusUsDollar public pUSD;
   IERC721 public POP;
   Escrow public Vault;
   // Instantiate PVT Farm
@@ -23,9 +23,9 @@ contract Plutus {
     Vault = new PlutusVault();
   }
 
-  // TODO Need to change to method that deposits and mints
-  function deposit(address payee) public payable {
+  function lockup(address payee) public payable {
     Vault.deposit(payee);
+    pUSD.mint(payee, 500);
+    // todo mint pop
   }
-
 }

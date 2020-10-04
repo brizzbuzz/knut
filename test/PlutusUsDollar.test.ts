@@ -36,8 +36,6 @@ describe("Plutus Us Dollar", () => {
     expect(await pUsd.balanceOf(randoAddress)).to.equal(amount);
   });
 
-  // todo how to *confirm* that external contracts cant call mint
-
   it("allows tokens to be burned", async () => {
     const amount = 1000
     const randoAddress = await others[0].getAddress();
