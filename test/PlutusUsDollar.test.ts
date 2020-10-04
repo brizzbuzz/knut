@@ -1,14 +1,9 @@
 import {ethers} from "@nomiclabs/buidler";
-import {Plutus} from "../typechain/Plutus";
 import {Signer} from "ethers";
 import chai, {expect} from "chai";
 import {solidity} from "ethereum-waffle";
-import {PlutusFactory, PlutusOptionPositionFactory, PlutusUsDollarFactory, PlutusVaultFactory} from "../typechain";
+import {PlutusUsDollarFactory} from "../typechain";
 import {PlutusUsDollar} from "../typechain/PlutusUsDollar";
-import {PlutusOptionPosition} from "../typechain/PlutusOptionPosition";
-import {PlutusVault} from "../typechain/PlutusVault";
-
-const {ether} = require('@openzeppelin/test-helpers');
 
 chai.use(solidity)
 
