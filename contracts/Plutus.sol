@@ -23,7 +23,8 @@ contract Plutus {
     Vault = new PlutusVault();
   }
 
-  function deposit(address payee) public virtual payable {
+  // TODO Need to change to method that deposits and mints
+  function deposit(address payee) public payable {
     Vault.deposit(payee);
   }
 
