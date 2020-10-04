@@ -8,9 +8,10 @@
   "license": "MIT",
   "private": false,
   "scripts": {
-    "build": "yarn run compile && npx buidler typechain",
+    "build": "npx buidler typechain",
     "compile": "npx buidler compile",
-    "test": "yarn run build && npx buidler test",
+    "test": "npx buidler test",
+    "cbt": "yarn run compile && yarn run build && yarn run test",
     "coverage": "yarn run build && npx buidler coverage --temp artifacts --network coverage"
   },
   "devDependencies": {
