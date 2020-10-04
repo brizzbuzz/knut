@@ -58,6 +58,6 @@ describe("Plutus", () => {
     const rando = await others[0].getAddress();
     await expect(vault.deposit(rando, {value: amount}))
       .to.be.revertedWith("Ownable: caller is not the owner")
-  })
+  });
 
 })

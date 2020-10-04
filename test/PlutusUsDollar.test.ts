@@ -47,6 +47,12 @@ describe("Plutus Us Dollar", () => {
     expect(await pUsd.balanceOf(randoAddress)).to.equal(750);
   });
 
+  it("does not allow burning of extra tokens", async () => {
+    const randoAddress = await others[0].getAddress();
+    await expect(pUsd.burn(randoAddress, 100))
+      .to.be.revertedWith("ERC20: burn amount exceeds balance");
+  });
+
   // todo add tests for event emitters
 
 })
