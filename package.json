@@ -11,7 +11,7 @@
     "build": "npx buidler typechain",
     "compile": "npx buidler compile",
     "test": "npx buidler test",
-    "cbt": "yarn run compile && yarn run build && yarn run test",
+    "ycybyt": "yarn run compile && yarn run build && yarn run test",
     "coverage": "yarn run build && npx buidler coverage --temp artifacts --network coverage"
   },
   "devDependencies": {

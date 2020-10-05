@@ -28,7 +28,7 @@ describe("Plutus Us Dollar", () => {
     expect(await pUsd.balanceOf(randoAddress)).to.equal(0);
   });
 
-  it("allows minting to non owners", async () => {
+  it("can be minted", async () => {
     const amount = 1000
     const randoAddress = await others[0].getAddress();
     await pUsd.mint(randoAddress, amount);
@@ -36,7 +36,7 @@ describe("Plutus Us Dollar", () => {
     expect(await pUsd.balanceOf(randoAddress)).to.equal(amount);
   });
 
-  it("allows tokens to be burned", async () => {
+  it("can be burned", async () => {
     const amount = 1000
     const randoAddress = await others[0].getAddress();
     await pUsd.mint(randoAddress, amount);
