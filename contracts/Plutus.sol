@@ -2,8 +2,6 @@
 pragma solidity ^0.6.8;
 
 import "@nomiclabs/buidler/console.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/payment/escrow/Escrow.sol";
 
 import "./PlutusVault.sol";
@@ -13,7 +11,7 @@ import "./PlutusUsDollar.sol";
 contract Plutus {
 
   PlutusUsDollar public pUSD;
-  IERC721 public POP;
+  PlutusOptionPosition public POP;
   Escrow public Vault;
   // Instantiate PVT Farm
 
@@ -26,6 +24,6 @@ contract Plutus {
   function lockup(address payee) public payable {
     Vault.deposit(payee);
     pUSD.mint(payee, 500);
-    // todo mint pop
+    POP.mint(payee, msg.value, 500);
   }
 }

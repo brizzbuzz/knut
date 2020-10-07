@@ -46,12 +46,13 @@ describe("Plutus", () => {
     expect(await plutus.Vault()).to.equal(vault.address);
   });
 
-  it("Plutus can lock up user funds into Vault and return pUSD", async () => {
+  it("Plutus can lock up user funds into Vault and returns pUSD and POP", async () => {
     const amount = ether('42');
     const payee = await others[0].getAddress();
     await plutus.lockup(payee, {value: amount});
     expect(await vault.depositsOf(payee)).to.equal(amount);
     expect(await pUsd.balanceOf(payee)).to.equal(500);
+    expect(await pop.ownerOf(1)).to.equal(payee);
   });
 
   it("Randos cannot deposit funds into the Vault", async () => {
