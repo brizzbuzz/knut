@@ -29,14 +29,13 @@ describe("Plutus Vault", () => {
     expect(await vault.depositsOf(payee)).to.equal(amount);
   });
 
-  it("Allows non owner withdrawals", async () => {
+  it("Allows non depositor withdrawals", async () => {
     const amount = ether('2');
     const first = await others[0].getAddress();
     const second = await others[1].getAddress();
     await vault.deposit(first, { value: amount });
-    await vault.withdraw(second, first, amount);
+    await expect(await vault.withdraw(second, first, amount)).to.changeBalance(await others[1], amount);
     expect(await vault.depositsOf(first)).to.equal(0);
-    // how to confirm second has correct balance
   });
 
 });
