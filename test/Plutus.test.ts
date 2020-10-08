@@ -66,7 +66,7 @@ describe("Plutus", () => {
     const amount = ether('42');
     const payee = await others[0].getAddress();
     await plutus.lockup(payee, { value: amount });
-    await expect(vault.withdraw(payee))
+    await expect(vault.withdraw(payee, payee, amount))
       .to.be.revertedWith("Ownable: caller is not the owner");
   });
 
@@ -82,6 +82,6 @@ describe("Plutus", () => {
     await plutus.lockup(payee, {value: amount});
     await expect(pUsd.burn(payee, 500))
       .to.be.revertedWith("Ownable: caller is not the owner");
-  })
+  });
 
 })

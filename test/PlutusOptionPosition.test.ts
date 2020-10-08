@@ -30,4 +30,5 @@ describe("Plutus Option Position", () => {
     expect((await pop.checkPosition(1))[1]).to.equal(500);
   });
 
+  // todo test burn
 })
