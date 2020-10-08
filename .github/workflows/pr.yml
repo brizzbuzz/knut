@@ -25,6 +25,8 @@ jobs:
           path: ~/node_modules
           key: ${{ runner.os }}-yarn-${{ hashFiles('**/*.lock') }}
           restore-keys: ${{ runner.os }}-yarn
+      - run: yarn install
+      # TODO Do I need to cache here as well?
       - run: yarn compile
       - run: yarn build
       - run: yarn test
