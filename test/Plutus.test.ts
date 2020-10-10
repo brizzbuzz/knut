@@ -95,4 +95,6 @@ describe("Plutus", () => {
     expect(await vault.depositsOf(payee)).to.equal(0);
   });
 
+  // TODO Need to test to ensure only owner can exercise option!
+
 })
