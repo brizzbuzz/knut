@@ -30,6 +30,6 @@ contract Plutus {
     require(POP.ownerOf(optionID) == exerciser, "Must be option holder to exercise");
     pUSD.burn(exerciser, POP.checkPositionCost(optionID));
     Vault.withdraw(exerciser, exerciser, POP.checkPositionValue(optionID));
-    POP.burn(optionID);
+    POP.burn(exerciser, optionID);
   }
 }

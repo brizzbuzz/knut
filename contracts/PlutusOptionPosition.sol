@@ -25,15 +25,16 @@ contract PlutusOptionPosition is ERC721, Ownable {
 
     uint256 nextPopId = _tokenIds.current();
 
-    _mint(payee, nextPopId);
+    _safeMint(payee, nextPopId);
     _setPosition(nextPopId, cost, value);
 
     return nextPopId;
   }
 
-
-  function burn(uint256 tokenID) public {
-    // TODO
+  function burn(address exerciser, uint256 tokenID) public onlyOwner {
+    require(ownerOf(tokenID) == exerciser, "You must own this option in order to exercise");
+    delete _Positions[tokenID];
+    _burn(tokenID);
   }
 
   function checkPosition(uint256 tokenId) public view returns (uint256, uint256) {
@@ -57,5 +58,7 @@ contract PlutusOptionPosition is ERC721, Ownable {
     require(_exists(tokenId), "ERC721Metadata: URI set of nonexistent token");
     _Positions[tokenId] = Position(_cost, _value);
   }
+
+  // TODO Override and error out for unused methods
 
 }
