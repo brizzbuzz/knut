@@ -25,4 +25,11 @@ contract Plutus {
     pUSD.mint(payee, 500);
     POP.mint(payee, msg.value, 500);
   }
+
+  function exercise(uint256 optionID, address payable exerciser) public {
+    require(POP.ownerOf(optionID) == exerciser, "Must be option holder to exercise");
+    pUSD.burn(exerciser, POP.checkPositionCost(optionID));
+    Vault.withdraw(exerciser, exerciser, POP.checkPositionValue(optionID));
+    POP.burn(optionID);
+  }
 }

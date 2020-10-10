@@ -84,4 +84,17 @@ describe("Plutus", () => {
       .to.be.revertedWith("Ownable: caller is not the owner");
   });
 
+  it("Allows Option Holder to exercise", async () => {
+    const amount = ether('42');
+    const payee = await others[0].getAddress();
+    await plutus.lockup(payee, {value: amount});
+    expect(await vault.depositsOf(payee)).to.equal(amount);
+    expect(await pUsd.balanceOf(payee)).to.equal(500);
+    expect(await pop.ownerOf(1)).to.equal(payee);
+    await expect(await plutus.exercise(1, payee)).to.changeBalance(await others[0], amount);
+    expect(await vault.depositsOf(payee)).to.equal(0);
+  });
+
+  // TODO Need to test to ensure only owner can exercise option!
+
 })
