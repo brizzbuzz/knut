@@ -30,5 +30,19 @@ describe("Plutus Option Position", () => {
     expect((await pop.checkPosition(1))[1]).to.equal(500);
   });
 
-  // todo test burn
+  it("Allows token to be burned", async () => {
+    const randomAddress = await others[0].getAddress();
+    await pop.mint(randomAddress, 1, 500);
+    expect(await pop.ownerOf(1)).to.equal(randomAddress);
+    await pop.burn(randomAddress, 1);
+    expect(await pop.balanceOf(randomAddress)).to.equal(0);
+  });
+
+  it("Prevents exercising tokens you don't hold", async () => {
+    const ownerAddress = await others[0].getAddress();
+    const phonyAddress = await others[1].getAddress();
+    await pop.mint(ownerAddress, 1, 500);
+    await expect(pop.burn(phonyAddress, 1))
+      .to.be.revertedWith("You must own this option in order to exercise");
+  })
 })

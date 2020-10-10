@@ -93,8 +93,9 @@ describe("Plutus", () => {
     expect(await pop.ownerOf(1)).to.equal(payee);
     await expect(await plutus.exercise(1, payee)).to.changeBalance(await others[0], amount);
     expect(await vault.depositsOf(payee)).to.equal(0);
+    expect(await pop.balanceOf(payee)).to.equal(0);
+    expect(await pUsd.balanceOf(payee)).to.equal(0);
   });
 
-  // TODO Need to test to ensure only owner can exercise option!
-
+  // TODO Edge Cases Galore!!
 })
