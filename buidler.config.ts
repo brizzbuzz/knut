@@ -12,7 +12,7 @@ const RINKEBY_PRIVATE_KEY = "";
 const config: BuidlerConfig = {
   defaultNetwork: "buidlerevm",
   solc: {
-    version: "0.6.8",
+    version: "0.6.10",
   },
   networks: {
     rinkeby: {

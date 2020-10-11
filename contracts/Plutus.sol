@@ -1,29 +1,36 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.6.8;
+pragma solidity ^0.6.10;
 
 import "@nomiclabs/buidler/console.sol";
 
 import "./PlutusVault.sol";
 import "./PlutusOptionPosition.sol";
 import "./PlutusUsDollar.sol";
+import "compound-open-oracle/contracts/Uniswap/UniswapAnchoredView.sol";
 
 contract Plutus {
 
+  // TODO Any risk with these being public?
   PlutusUsDollar public pUSD;
   PlutusOptionPosition public POP;
   PlutusVault public Vault;
-  // Instantiate PVT Farm
+  UniswapAnchoredView public Oracle;
 
-  constructor() public {
+  // TODO Instantiate PVT Farm
+
+  constructor(address oracleAddress) public {
     pUSD = new PlutusUsDollar();
     POP = new PlutusOptionPosition();
     Vault = new PlutusVault();
+    Oracle = UniswapAnchoredView(oracleAddress);
   }
 
   function lockup(address payee) public payable {
+    // TODO need to multiply price * amount * mintRatio
     Vault.deposit(payee);
-    pUSD.mint(payee, 500);
-    POP.mint(payee, msg.value, 500);
+    uint price = Oracle.price("ETH");
+    pUSD.mint(payee, price);
+    POP.mint(payee, msg.value, price);
   }
 
   function exercise(uint256 optionID, address payable exerciser) public {

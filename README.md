@@ -8,7 +8,7 @@
 -->
 
 Plutus aims to do away with the existing infrastructure around decentralized stable coins.  No more APRs, no more 
-potential liquidations, no more over collateralizing.   
+potential liquidations. TODO Doc explaining.
 
 <!--
 ![](header.png)

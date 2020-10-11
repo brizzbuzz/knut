@@ -27,15 +27,14 @@
     "@types/node": "^14.11.2",
     "buidler-typechain": "0.2.1",
     "chai": "^4.2.0",
+    "compound-open-oracle": "^1.1.1",
     "ethereum-waffle": "^3.1.1",
     "ethers": "^5.0.15",
     "solidity-coverage": "^0.7.10",
     "ts-generator": "0.0.8",
     "ts-node": "^9.0.0",
     "typechain": "^2.0.0",
-    "typescript": "^4.0.3"
-  },
-  "dependencies": {
+    "typescript": "^4.0.3",
     "@openzeppelin/contracts": "^3.2.0"
   }
 }
