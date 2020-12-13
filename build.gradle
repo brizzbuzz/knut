@@ -4,6 +4,7 @@ plugins {
     id 'application'
     id "com.github.johnrengelman.shadow" version "5.2.0"
     id 'org.web3j' version '4.8.1'
+    id "org.web3j.solidity" version "0.3.0"
 }
 
 group 'org.leafygreens.plutus'
@@ -18,7 +19,17 @@ repositories {
 
 web3j {
     generatedPackageName = 'org.leafygreens.plutus.generated.contracts'
-    excludedContracts = ['Mortal']
+    excludedContracts = [
+            'Mortal',
+            'Address',
+            'Context',
+            'Counters',
+            'EnumerableMap',
+            'EnumerableSet',
+            'FixedPoint',
+            'SafeMath',
+            'Strings',
+    ]
 }
 
 ext {
@@ -43,7 +54,7 @@ jar {
     manifest {
         attributes(
                 'Main-Class': 'org.leafygreens.plutus.Plutus',
-                'Multi-Release':'true'
+                'Multi-Release': 'true'
         )
     }
 }
@@ -68,4 +79,6 @@ sourceSets {
     test.kotlin.srcDirs += "${web3j.generatedFilesBaseDir}/test/java"
 }
 
-
+node {
+    useGradleProxySettings = false
+}

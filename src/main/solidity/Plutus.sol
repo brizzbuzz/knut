@@ -1,12 +1,10 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.6.10;
-
-import "@nomiclabs/buidler/console.sol";
+pragma solidity ^0.7.0;
 
 import "./PlutusVault.sol";
 import "./PlutusOptionPosition.sol";
 import "./PlutusUsDollar.sol";
-import "compound-open-oracle/contracts/Uniswap/UniswapAnchoredView.sol";
+//import "compound-open-oracle/contracts/Uniswap/UniswapAnchoredView.sol";
 
 contract Plutus {
 
@@ -14,7 +12,7 @@ contract Plutus {
   PlutusUsDollar public pUSD;
   PlutusOptionPosition public POP;
   PlutusVault public Vault;
-  UniswapAnchoredView public Oracle;
+//  UniswapAnchoredView public Oracle;
 
   // TODO Instantiate PVT Farm
 
@@ -22,13 +20,14 @@ contract Plutus {
     pUSD = new PlutusUsDollar();
     POP = new PlutusOptionPosition();
     Vault = new PlutusVault();
-    Oracle = UniswapAnchoredView(oracleAddress);
+//    Oracle = UniswapAnchoredView(oracleAddress);
   }
 
   function lockup(address payee) public payable {
     // TODO need to multiply price * amount * mintRatio
     Vault.deposit(payee);
-    uint price = Oracle.price("ETH");
+//    uint price = Oracle.price("ETH");
+    uint price = 500;
     pUSD.mint(payee, price);
     POP.mint(payee, msg.value, price);
   }
