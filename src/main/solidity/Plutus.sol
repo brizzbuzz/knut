@@ -3,7 +3,7 @@ pragma solidity ^0.7.0;
 
 import "./PlutusVault.sol";
 import "./PlutusOptionPosition.sol";
-import "./PlutusUsDollar.sol";
+import "./PlutusUSDollar.sol";
 //import "compound-open-oracle/contracts/Uniswap/UniswapAnchoredView.sol";
 
 contract Plutus {
