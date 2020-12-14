@@ -1,4 +1,4 @@
-package org.leafygreens.plutus.generated.contracts
+package org.leafygreens.knut.generated.contracts
 
 import java.io.File
 import java.math.BigInteger
@@ -15,9 +15,9 @@ import org.web3j.tx.gas.ContractGasProvider
 
 @EVMTest
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-class PlutusUSDollarTest {
+class KnutTest {
 
-  private lateinit var contract: PlutusUsDollar
+  private lateinit var contract: Knut
 
   @BeforeAll
   fun deploy(
@@ -25,13 +25,13 @@ class PlutusUSDollarTest {
       transactionManager: TransactionManager,
       contractGasProvider: ContractGasProvider
   ) {
-    contract = PlutusUsDollar.deploy(web3j, transactionManager, contractGasProvider).send()
+    contract = Knut.deploy(web3j, transactionManager, contractGasProvider).send()
   }
 
   @Test
   internal fun `Contract has the correct name and symbol`() {
-    assertEquals("Plutus US Dollar", contract.name().send())
-    assertEquals("pUSD", contract.symbol().send())
+    assertEquals("Knut", contract.name().send())
+    assertEquals("KNUT", contract.symbol().send())
   }
 
   @Test

@@ -7,7 +7,7 @@ plugins {
     id "org.web3j.solidity" version "0.3.0"
 }
 
-group 'org.leafygreens.plutus'
+group 'org.leafygreens.knut'
 version '0.1.0'
 
 sourceCompatibility = 11
@@ -18,9 +18,8 @@ repositories {
 }
 
 web3j {
-    generatedPackageName = 'org.leafygreens.plutus.generated.contracts'
+    generatedPackageName = 'org.leafygreens.knut.generated.contracts'
     excludedContracts = [
-            'Mortal',
             'Address',
             'Context',
             'Counters',
@@ -53,13 +52,13 @@ dependencies {
 jar {
     manifest {
         attributes(
-                'Main-Class': 'org.leafygreens.plutus.Plutus',
-                'Multi-Release': 'true'
+                'Main-Class': 'org.leafygreens.knut.Knut',
+                'Multi-Release':'true'
         )
     }
 }
 application {
-    mainClassName = 'org.leafygreens.plutus.Plutus'
+    mainClassName = 'org.leafygreens.knut.Knut'
 }
 
 test {
