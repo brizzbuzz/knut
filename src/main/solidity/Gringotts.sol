@@ -16,7 +16,7 @@ contract Gringotts {
 
     // TODO Instantiate Incentive Token
 
-    constructor(address oracleAddress) public {
+    constructor() public {
         knut = new Knut();
         vows = new UnbreakableVow();
         vault = new Vault713();
@@ -25,6 +25,7 @@ contract Gringotts {
 
     function lockup(address payee) public payable {
         // TODO need to multiply price * amount * mintRatio
+        // TODO can payee just be msg.sender?
         vault.deposit(payee);
         //    uint price = Oracle.price("ETH");
         uint price = 500;
