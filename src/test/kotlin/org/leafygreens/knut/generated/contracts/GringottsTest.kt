@@ -49,26 +49,29 @@ class GringottsTest {
 
   @Test
   internal fun `Gringotts mints knuts and creates an unbreakable vow`() = runBlocking {
+    // when
     val creds = generateFundedCreds(BigDecimal.ONE, web3j)
     val startingBalance = web3j.ethGetBalance(creds.address, DefaultBlockParameterName.LATEST).send().balance
-
     val lockupAmount = Convert.toWei(BigDecimal(0.5), Convert.Unit.ETHER)
-    val lockupReceipt = performSimpleLockup(creds, lockupAmount)
 
+    // do
+    val lockupReceipt = performSimpleLockup(creds, lockupAmount)
+    val lockupEvent = gringotts.getLockupEvents(lockupReceipt).first()
+
+    // expect
     val gasCost = lockupReceipt.gasUsed.times(contractGasProvider.gasPrice)
 
     val newBalance = startingBalance
         .minus(lockupAmount.toBigInteger())
         .minus(gasCost)
 
-    // TODO Read emitted results off transaction receipt?
+    val position = vows.checkPosition(lockupEvent.optionID).send()
 
     assertEquals(BigInteger.valueOf(500), knut.balanceOf(creds.address).send())
-    assertEquals(lockupAmount.toBigInteger(), vows.checkPosition(BigInteger.ONE).send().component1())
-    assertEquals(BigInteger.valueOf(500), vows.checkPosition(BigInteger.ONE).send().component2())
+    assertEquals(lockupAmount.toBigInteger(), position.component1())
+    assertEquals(BigInteger.valueOf(500), position.component2())
     assertEquals(newBalance, web3j.ethGetBalance(creds.address, DefaultBlockParameterName.LATEST).send().balance)
   }
-
 
   @Test
   internal fun `Gringotts allows multiple vows to be created`() = runBlocking {
@@ -77,13 +80,16 @@ class GringottsTest {
     val lockupAmount = Convert.toWei(BigDecimal(0.25), Convert.Unit.ETHER)
 
     // do
-    performSimpleLockup(creds, lockupAmount)
-    performSimpleLockup(creds, lockupAmount)
+    val lockupReceiptA = performSimpleLockup(creds, lockupAmount)
+    val lockupReceiptB = performSimpleLockup(creds, lockupAmount)
 
     // expect
-    assertEquals(BigInteger.valueOf(1000), knut.balanceOf(creds.address).send())
-    assertEquals(creds.address, vows.ownerOf(BigInteger.valueOf(3)).send())
-    assertEquals(creds.address, vows.ownerOf(BigInteger.valueOf(4)).send())
+    val lockupEventA = gringotts.getLockupEvents(lockupReceiptA).first()
+    val lockupEventB = gringotts.getLockupEvents(lockupReceiptB).first()
+
+    assertEquals(lockupEventA.value.plus(lockupEventB.value), knut.balanceOf(creds.address).send())
+    assertEquals(creds.address, vows.ownerOf(lockupEventA.optionID).send())
+    assertEquals(creds.address, vows.ownerOf(lockupEventB.optionID).send())
   }
 
   @Test
