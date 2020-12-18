@@ -13,9 +13,12 @@ contract Gringotts {
     UnbreakableVow public vows;
     Vault713 public vault;
     //  UniswapAnchoredView public Oracle;
-
     // TODO Instantiate Incentive Token
 
+    event Lockup(address from, uint amount, uint value, uint optionID);
+    event Exercise(address from, uint optionID, uint burned, uint value);
+
+    // todo investigate -> Warning: Visibility for constructor is ignored
     constructor() public {
         knut = new Knut();
         vows = new UnbreakableVow();
@@ -23,20 +26,23 @@ contract Gringotts {
         //    Oracle = UniswapAnchoredView(oracleAddress);
     }
 
-    function lockup(address payee) public payable {
+    function lockup() public payable {
         // TODO need to multiply price * amount * mintRatio
         // TODO can payee just be msg.sender?
-        vault.deposit(payee);
-        //    uint price = Oracle.price("ETH");
+        vault.deposit(msg.sender);
+        // uint price = Oracle.price("ETH");
         uint price = 500;
-        knut.mint(payee, price);
-        vows.mint(payee, msg.value, price);
+        knut.mint(msg.sender, price);
+        uint optionId = vows.mint(msg.sender, msg.value, price);
+        emit Lockup(msg.sender, msg.value, price, optionId);
     }
 
-    function exercise(uint256 optionID, address payable exerciser) public {
-        require(vows.ownerOf(optionID) == exerciser, "Must be option holder to exercise");
-        knut.burn(exerciser, vows.checkPositionCost(optionID));
-        vault.withdraw(exerciser, exerciser, vows.checkPositionValue(optionID));
-        vows.burn(exerciser, optionID);
+    // todo Can exerciser just be sender?  how to mark payable
+    function exercise(uint256 optionId, address payable exerciser) public {
+        require(vows.ownerOf(optionId) == exerciser, "Must be option holder to exercise");
+        knut.burn(exerciser, vows.checkPositionCost(optionId));
+        vault.withdraw(exerciser, exerciser, vows.checkPositionValue(optionId));
+        emit Exercise(exerciser, optionId, vows.checkPositionCost(optionId), vows.checkPositionValue(optionId));
+        vows.burn(exerciser, optionId);
     }
 }

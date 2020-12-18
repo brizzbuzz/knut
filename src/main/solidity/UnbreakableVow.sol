@@ -59,6 +59,6 @@ contract UnbreakableVow is ERC721, Ownable {
         _Vows[tokenId] = Vow(_cost, _value);
     }
 
-    // TODO Override and error out for unused methods
+    // TODO Override and error out for unused methods?? Or is that default
 
 }

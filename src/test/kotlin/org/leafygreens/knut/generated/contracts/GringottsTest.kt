@@ -2,15 +2,14 @@ package org.leafygreens.knut.generated.contracts
 
 import java.math.BigDecimal
 import java.math.BigInteger
+import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import org.leafygreens.knut.generated.contracts.TestUtils.generateFundedCreds
 import org.web3j.EVMTest
-import org.web3j.abi.FunctionEncoder
-import org.web3j.abi.datatypes.Address
-import org.web3j.abi.datatypes.Function
 import org.web3j.crypto.Credentials
 import org.web3j.protocol.Web3j
 import org.web3j.protocol.core.DefaultBlockParameterName
@@ -49,18 +48,20 @@ class GringottsTest {
   }
 
   @Test
-  internal fun `Gringotts mints knuts and creates an unbreakable vow`() {
+  internal fun `Gringotts mints knuts and creates an unbreakable vow`() = runBlocking {
     val creds = generateFundedCreds(BigDecimal.ONE, web3j)
     val startingBalance = web3j.ethGetBalance(creds.address, DefaultBlockParameterName.LATEST).send().balance
 
     val lockupAmount = Convert.toWei(BigDecimal(0.5), Convert.Unit.ETHER)
-    val txReceipt = performSimpleLockup(creds, lockupAmount)
+    val lockupReceipt = performSimpleLockup(creds, lockupAmount)
 
-    val gasCost = txReceipt.gasUsed.times(contractGasProvider.gasPrice)
+    val gasCost = lockupReceipt.gasUsed.times(contractGasProvider.gasPrice)
 
     val newBalance = startingBalance
         .minus(lockupAmount.toBigInteger())
         .minus(gasCost)
+
+    // TODO Read emitted results off transaction receipt?
 
     assertEquals(BigInteger.valueOf(500), knut.balanceOf(creds.address).send())
     assertEquals(lockupAmount.toBigInteger(), vows.checkPosition(BigInteger.ONE).send().component1())
@@ -68,30 +69,73 @@ class GringottsTest {
     assertEquals(newBalance, web3j.ethGetBalance(creds.address, DefaultBlockParameterName.LATEST).send().balance)
   }
 
+
   @Test
-  internal fun `Gringotts allows positions to be exercised`() {
-//    TODO("Not yet implemented")
+  internal fun `Gringotts allows multiple vows to be created`() = runBlocking {
+    // when
+    val creds = generateFundedCreds(BigDecimal.ONE, web3j)
+    val lockupAmount = Convert.toWei(BigDecimal(0.25), Convert.Unit.ETHER)
+
+    // do
+    performSimpleLockup(creds, lockupAmount)
+    performSimpleLockup(creds, lockupAmount)
+
+    // expect
+    assertEquals(BigInteger.valueOf(1000), knut.balanceOf(creds.address).send())
+    assertEquals(creds.address, vows.ownerOf(BigInteger.valueOf(3)).send())
+    assertEquals(creds.address, vows.ownerOf(BigInteger.valueOf(4)).send())
+  }
+
+  @Test
+  internal fun `Gringotts allows positions to be exercised`() = runBlocking {
+    val creds = generateFundedCreds(BigDecimal.ONE, web3j)
+    val startingBalance = web3j.ethGetBalance(creds.address, DefaultBlockParameterName.LATEST).send().balance
+
+    val lockupAmount = Convert.toWei(BigDecimal(0.5), Convert.Unit.ETHER)
+    val lockupReceipt = performSimpleLockup(creds, lockupAmount)
+    val lockupEvent = gringotts.getLockupEvents(lockupReceipt)
+
+    // do
+    val exerciseReceipt = performSimpleExercise(creds, BigInteger.ONE)
+    val exerciseEvent = gringotts.getExerciseEvents(exerciseReceipt)
+
+    // expect
+    assertNotNull(lockupEvent)
+    assertNotNull(exerciseEvent)
+
+    val lockupGasCost = lockupReceipt.gasUsed.times(contractGasProvider.gasPrice)
+    val exerciseGasCost = exerciseReceipt.gasUsed.times(contractGasProvider.gasPrice)
+
+    val newBalance = startingBalance
+        .minus(lockupGasCost)
+        .minus(exerciseGasCost)
+
+    assertEquals(newBalance, web3j.ethGetBalance(creds.address, DefaultBlockParameterName.LATEST).send().balance)
   }
 
   private fun performSimpleLockup(creds: Credentials, lockupAmount: BigDecimal): TransactionReceipt {
-    val lockupFunction = Function(
-        "lockup",
-        listOf(Address(creds.address)),
-        emptyList()
-    )
+    val lockup = gringotts.lockup().encodeFunctionCall()
+    val tx = createTx(creds.address, lockup, lockupAmount.toBigInteger())
+    return executeTransaction(tx)
+  }
 
-    val encodedFunction = FunctionEncoder.encode(lockupFunction)
+  private fun performSimpleExercise(creds: Credentials, optionId: BigInteger): TransactionReceipt {
+    val encodedFunction = gringotts.exercise(optionId, creds.address).encodeFunctionCall()
+    val tx = createTx(creds.address, encodedFunction)
+    return executeTransaction(tx)
+  }
 
-    val tx = Transaction.createFunctionCallTransaction(
-        creds.address,
-        web3j.getLatestNonce(creds.address),
-        DefaultGasProvider.GAS_PRICE,
-        DefaultGasProvider.GAS_LIMIT,
-        gringotts.contractAddress,
-        lockupAmount.toBigInteger(),
-        encodedFunction
-    )
+  private fun createTx(sender: String, encodedFunction: String, amount: BigInteger? = null): Transaction = Transaction.createFunctionCallTransaction(
+      sender,
+      web3j.getLatestNonce(sender),
+      DefaultGasProvider.GAS_PRICE,
+      DefaultGasProvider.GAS_LIMIT,
+      gringotts.contractAddress,
+      amount,
+      encodedFunction
+  )
 
+  private fun executeTransaction(tx: Transaction): TransactionReceipt {
     val txResponse = web3j.ethSendTransaction(tx).send()
     val txHash = txResponse.transactionHash
 
