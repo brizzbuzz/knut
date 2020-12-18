@@ -15,6 +15,7 @@ contract Gringotts {
     //  UniswapAnchoredView public Oracle;
     // TODO Instantiate Incentive Token
 
+    // TODO Make these more aligned
     event Lockup(address from, uint amount, uint value, uint optionID);
     event Exercise(address from, uint optionID, uint burned, uint value);
 
@@ -29,7 +30,7 @@ contract Gringotts {
     function lockup() public payable {
         // TODO need to multiply price * amount * mintRatio
         // TODO can payee just be msg.sender?
-        vault.deposit(msg.sender);
+        vault.deposit(msg.sender, msg.value);
         // uint price = Oracle.price("ETH");
         uint price = 500;
         knut.mint(msg.sender, price);
@@ -38,11 +39,11 @@ contract Gringotts {
     }
 
     // todo Can exerciser just be sender?  how to mark payable
-    function exercise(uint256 optionId, address payable exerciser) public {
-        require(vows.ownerOf(optionId) == exerciser, "Must be option holder to exercise");
-        knut.burn(exerciser, vows.checkPositionCost(optionId));
-        vault.withdraw(exerciser, exerciser, vows.checkPositionValue(optionId));
-        emit Exercise(exerciser, optionId, vows.checkPositionCost(optionId), vows.checkPositionValue(optionId));
-        vows.burn(exerciser, optionId);
+    function exercise(uint256 optionId) public {
+        emit Exercise(msg.sender, optionId, vows.checkPositionCost(optionId), vows.checkPositionValue(optionId));
+        require(vows.ownerOf(optionId) == msg.sender, "Must be option holder to exercise");
+        knut.burn(msg.sender, vows.checkPositionCost(optionId)); // TODO Need to verify amount available??
+        vault.withdraw(msg.sender, vows.checkPositionCreator(optionId), vows.checkPositionValue(optionId));
+        vows.burn(msg.sender, optionId);
     }
 }

@@ -11,6 +11,7 @@ contract UnbreakableVow is ERC721, Ownable {
         // TODO Address
         uint256 cost;
         uint256 value;
+        address creator;
     }
 
     using Counters for Counters.Counter;
@@ -26,7 +27,7 @@ contract UnbreakableVow is ERC721, Ownable {
         uint256 nextPopId = _tokenIds.current();
 
         _safeMint(payee, nextPopId);
-        _setPosition(nextPopId, cost, value);
+        _setPosition(nextPopId, cost, value, payee);
 
         return nextPopId;
     }
@@ -54,9 +55,14 @@ contract UnbreakableVow is ERC721, Ownable {
         return _Vows[tokenId].cost;
     }
 
-    function _setPosition(uint256 tokenId, uint256 _cost, uint256 _value) private {
+    function checkPositionCreator(uint256 tokenId) public view returns (address) {
         require(_exists(tokenId), "ERC721Metadata: URI set of nonexistent token");
-        _Vows[tokenId] = Vow(_cost, _value);
+        return _Vows[tokenId].creator;
+    }
+
+    function _setPosition(uint256 tokenId, uint256 _cost, uint256 _value, address creator) private {
+        require(_exists(tokenId), "ERC721Metadata: URI set of nonexistent token");
+        _Vows[tokenId] = Vow(_cost, _value, creator);
     }
 
     // TODO Override and error out for unused methods?? Or is that default
