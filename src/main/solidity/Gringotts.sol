@@ -4,9 +4,13 @@ pragma solidity ^0.7.0;
 import "./Vault713.sol";
 import "./UnbreakableVow.sol";
 import "./Knut.sol";
+
+import "@openzeppelin/contracts/utils/Address.sol";
 //import "compound-open-oracle/contracts/Uniswap/UniswapAnchoredView.sol";
 
 contract Gringotts {
+
+    using Address for address payable;
 
     // TODO Any risk with these being public?
     Knut public knut;
@@ -30,7 +34,6 @@ contract Gringotts {
 
     function lockup() public payable {
         // TODO need to multiply price * amount * mintRatio
-        // TODO can payee just be msg.sender?
         vault.deposit(msg.sender, msg.value);
         // uint price = Oracle.price("ETH");
         uint price = 500;
@@ -43,9 +46,14 @@ contract Gringotts {
     function exercise(uint256 optionId) public {
         require(vows.ownerOf(optionId) == msg.sender, "Must be option holder to exercise");
         (uint positionValue, uint positionCost, address positionCreator) = vows.checkPosition(optionId);
-        vault.withdraw(msg.sender, positionCreator, positionValue);
-        knut.burn(msg.sender, vows.checkPositionCost(optionId)); // TODO Need to verify amount available??
-        vows.burn(msg.sender, optionId);
+        withdraw(msg.sender, positionCreator, positionValue);
+//        knut.burn(msg.sender, vows.checkPositionCost(optionId)); // TODO Need to verify amount available??
+//        vows.burn(msg.sender, optionId);
         emit Exercise(msg.sender, optionId, positionCreator, positionCost, positionValue);
+    }
+
+    function withdraw(address payable payee, address vowCreator, uint256 value) private {
+        vault.withdraw(payee, vowCreator, value);
+        payable(msg.sender).sendValue(value);
     }
 }
