@@ -1,11 +1,13 @@
 package org.leafygreens.knut.generated.contracts
 
+import java.lang.Exception
 import java.math.BigDecimal
 import java.math.BigInteger
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
+import org.junit.jupiter.api.assertThrows
 import org.leafygreens.knut.generated.contracts.TestUtils.generateFundedCreds
 import org.web3j.EVMTest
 import org.web3j.crypto.Credentials
@@ -14,6 +16,7 @@ import org.web3j.protocol.core.DefaultBlockParameterName
 import org.web3j.protocol.core.methods.request.Transaction
 import org.web3j.protocol.core.methods.response.TransactionReceipt
 import org.web3j.tx.TransactionManager
+import org.web3j.tx.exceptions.ContractCallException
 import org.web3j.tx.gas.ContractGasProvider
 import org.web3j.tx.gas.DefaultGasProvider
 import org.web3j.utils.Convert
@@ -165,7 +168,7 @@ class GringottsTest {
     // do
     val lockupReceipt = performSimpleLockup(creds, lockupAmount)
     val lockupEvents = gringotts.getLockupEvents(lockupReceipt)
-    val mintEvents = vows.getMintEvents(lockupReceipt)
+    val mintEvents = vows.getSwearEvents(lockupReceipt)
 
     // expect
     val optionId = mintEvents.first().optionId
@@ -189,11 +192,16 @@ class GringottsTest {
     // do
     val exerciseReceipt = performSimpleExercise(creds, lockupEvent.optionID)
     val exerciseEvents = gringotts.getExerciseEvents(exerciseReceipt)
-    val burnEvents = vows.getBurnEvents(exerciseReceipt)
+    val burnEvents = vows.getFulfillEvents(exerciseReceipt)
 
     // expect
+    val optionId = exerciseEvents.first().optionId
     assertEquals(1, exerciseEvents.size, "There should only be one lockup event")
     assertEquals(1, burnEvents.size, "There should only be one deposit event")
+    assertEquals(optionId, burnEvents.first().optionId, "Exercise option id should match burned id")
+    assertThrows<ContractCallException>("Burned token should have no owner") {
+      vows.ownerOf(optionId).send()
+    }
   }
 
   private fun performSimpleLockup(creds: Credentials, lockupAmount: BigDecimal): TransactionReceipt {

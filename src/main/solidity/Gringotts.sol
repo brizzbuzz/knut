@@ -47,7 +47,7 @@ contract Gringotts {
         (uint positionValue, uint positionCost, address positionCreator) = vows.checkPosition(optionId);
         withdraw(msg.sender, positionCreator, positionValue);
         knut.burn(msg.sender, vows.checkPositionCost(optionId)); // TODO Need to verify amount available??
-//        vows.burn(msg.sender, optionId);
+        vows.burn(msg.sender, optionId);
         emit Exercise(msg.sender, optionId, positionCreator, positionCost, positionValue);
     }
 

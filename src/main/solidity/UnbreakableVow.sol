@@ -7,8 +7,8 @@ import "@openzeppelin/contracts/utils/Counters.sol";
 
 contract UnbreakableVow is ERC721, Ownable {
 
-    event Mint(address indexed creator, uint256 optionId, uint256 cost, uint256 value);
-    event Burn(address indexed exerciser, uint256 optionId);
+    event Swear(address indexed creator, uint256 optionId, uint256 cost, uint256 value);
+    event Fulfill(address indexed exerciser, uint256 optionId);
 
     struct Vow {
         uint256 cost;
@@ -32,7 +32,7 @@ contract UnbreakableVow is ERC721, Ownable {
         _safeMint(payee, nextPopId);
         _setPosition(nextPopId, cost, value, payee);
 
-        emit Mint(payee, nextPopId, cost, value);
+        emit Swear(payee, nextPopId, cost, value);
         return nextPopId;
     }
 
@@ -40,7 +40,7 @@ contract UnbreakableVow is ERC721, Ownable {
         require(ownerOf(tokenID) == exerciser, "You must own this option in order to exercise");
         delete _Vows[tokenID];
         _burn(tokenID);
-        emit Burn(exerciser, tokenID);
+        emit Fulfill(exerciser, tokenID);
     }
 
     function checkPosition(uint256 tokenId) public view returns (uint256, uint256, address) {
