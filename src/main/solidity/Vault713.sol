@@ -15,8 +15,6 @@ contract Vault713 is Ownable {
 
     mapping(address => uint256) private _deposits;
 
-    constructor() public { }
-
     function depositsOf(address payee) public view returns (uint256) {
         return _deposits[payee];
     }
