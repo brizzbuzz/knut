@@ -7,8 +7,10 @@ import "@openzeppelin/contracts/utils/Counters.sol";
 
 contract UnbreakableVow is ERC721, Ownable {
 
+    event Mint(address indexed creator, uint256 optionId, uint256 cost, uint256 value);
+    event Burn(address indexed exerciser, uint256 optionId);
+
     struct Vow {
-        // TODO Address
         uint256 cost;
         uint256 value;
         address creator;
@@ -24,11 +26,13 @@ contract UnbreakableVow is ERC721, Ownable {
     function mint(address payee, uint256 value, uint256 cost) public onlyOwner returns (uint256) {
         _tokenIds.increment();
 
+        // TODO Should be renamed
         uint256 nextPopId = _tokenIds.current();
 
         _safeMint(payee, nextPopId);
         _setPosition(nextPopId, cost, value, payee);
 
+        emit Mint(payee, nextPopId, cost, value);
         return nextPopId;
     }
 
@@ -36,6 +40,7 @@ contract UnbreakableVow is ERC721, Ownable {
         require(ownerOf(tokenID) == exerciser, "You must own this option in order to exercise");
         delete _Vows[tokenID];
         _burn(tokenID);
+        emit Burn(exerciser, tokenID);
     }
 
     function checkPosition(uint256 tokenId) public view returns (uint256, uint256, address) {
@@ -64,7 +69,5 @@ contract UnbreakableVow is ERC721, Ownable {
         require(_exists(tokenId), "ERC721Metadata: URI set of nonexistent token");
         _Vows[tokenId] = Vow(_cost, _value, creator);
     }
-
-    // TODO Override and error out for unused methods?? Or is that default
 
 }

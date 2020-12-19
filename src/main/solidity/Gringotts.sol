@@ -22,7 +22,6 @@ contract Gringotts {
     // TODO Make these more aligned
     event Lockup(address from, uint amount, uint value, uint optionID);
     event Exercise(address from, uint optionId, address creator, uint burned, uint value);
-//    event Exercise(address from);
 
     // todo investigate -> Warning: Visibility for constructor is ignored
     constructor() public {
