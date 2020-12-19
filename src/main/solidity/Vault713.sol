@@ -38,13 +38,10 @@ contract Vault713 is Ownable {
      * checks-effects-interactions pattern or using {ReentrancyGuard}.
      *
      * @param payee The address whose funds will be withdrawn and transferred to.
-     */ // TODO Should be named to withdraw note or something, to signify that gringotts does the transfer
+     */ // TODO Should be named to withdraw note or settle or something, to signify that gringotts does the transfer
     function withdraw(address payable payee, address optionCreator, uint256 amount) public onlyOwner {
         // TODO must prevent over withdraw
         _deposits[optionCreator] = _deposits[optionCreator].sub(amount);
-//        payee.sendValue(amount);
-//        payee.transfer(amount);
-//        payable(msg.sender).transfer(amount);
         emit Withdrawn(payee, amount); // TODO Update to include option creator
     }
 }
