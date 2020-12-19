@@ -15,8 +15,6 @@ contract Vault713 is Ownable {
 
     mapping(address => uint256) private _deposits;
 
-    constructor() public { }
-
     function depositsOf(address payee) public view returns (uint256) {
         return _deposits[payee];
     }
@@ -25,10 +23,8 @@ contract Vault713 is Ownable {
      * @dev Stores the sent amount as credit to be withdrawn.
      * @param payee The destination address of the funds.
      */
-    function deposit(address payee) public virtual payable onlyOwner {
-        uint256 amount = msg.value;
+    function deposit(address payee, uint256 amount) public virtual payable onlyOwner {
         _deposits[payee] = _deposits[payee].add(amount);
-
         emit Deposited(payee, amount);
     }
 

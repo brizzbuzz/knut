@@ -1,14 +1,12 @@
 package org.leafygreens.knut.generated.contracts
 
-import java.io.File
 import java.math.BigInteger
-import java.util.UUID
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
+import org.leafygreens.knut.generated.contracts.TestUtils.generateCreds
 import org.web3j.EVMTest
-import org.web3j.crypto.WalletUtils
 import org.web3j.protocol.Web3j
 import org.web3j.tx.TransactionManager
 import org.web3j.tx.gas.ContractGasProvider
@@ -37,10 +35,7 @@ class KnutTest {
   @Test
   internal fun `Contract can mint new tokens to a provided address`() {
     // when
-    val password = UUID.randomUUID().toString()
-    val walletDirectory = createTempDir()
-    val wallet = WalletUtils.generateNewWalletFile(password, walletDirectory)
-    val credentials = WalletUtils.loadCredentials(password, File("$walletDirectory/$wallet"))
+    val credentials = generateCreds()
     val address = credentials.address
     val amount = BigInteger.valueOf(10000)
 
@@ -54,10 +49,7 @@ class KnutTest {
   @Test
   internal fun `Contract can burn a subset of tokens`() {
     // when
-    val password = UUID.randomUUID().toString()
-    val walletDirectory = createTempDir()
-    val wallet = WalletUtils.generateNewWalletFile(password, walletDirectory)
-    val credentials = WalletUtils.loadCredentials(password, File("$walletDirectory/$wallet"))
+    val credentials = generateCreds()
     val address = credentials.address
     val amount = BigInteger.valueOf(10000)
     contract.mint(address, amount).send()
