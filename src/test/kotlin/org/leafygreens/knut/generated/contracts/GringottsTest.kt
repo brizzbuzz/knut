@@ -105,6 +105,8 @@ class GringottsTest {
     val lockupReceipt = performSimpleLockup(creds, lockupAmount)
     val lockupEvent = gringotts.getLockupEvents(lockupReceipt).first()
 
+    assertEquals(BigInteger.valueOf(500), knut.balanceOf(creds.address).send())
+
     // do
     val exerciseReceipt = performSimpleExercise(creds, lockupEvent.optionID)
     val exerciseEvent = gringotts.getExerciseEvents(exerciseReceipt).first()
@@ -128,6 +130,7 @@ class GringottsTest {
     assertEquals(lockupEvent.value, exerciseEvent.burned)
 
 //    assertEquals(newBalance, web3j.ethGetBalance(creds.address, DefaultBlockParameterName.LATEST).send().balance)
+    assertEquals(BigInteger.ZERO, knut.balanceOf(creds.address).send())
   }
 
   private fun performSimpleLockup(creds: Credentials, lockupAmount: BigDecimal): TransactionReceipt {
