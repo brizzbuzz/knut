@@ -17,7 +17,8 @@ contract Gringotts {
 
     // TODO Make these more aligned
     event Lockup(address from, uint amount, uint value, uint optionID);
-    event Exercise(address from, uint optionID, uint burned, uint value);
+    event Exercise(address from, uint optionId, address creator, uint burned, uint value);
+//    event Exercise(address from);
 
     // todo investigate -> Warning: Visibility for constructor is ignored
     constructor() public {
@@ -40,10 +41,12 @@ contract Gringotts {
 
     // todo Can exerciser just be sender?  how to mark payable
     function exercise(uint256 optionId) public {
-        emit Exercise(msg.sender, optionId, vows.checkPositionCost(optionId), vows.checkPositionValue(optionId));
         require(vows.ownerOf(optionId) == msg.sender, "Must be option holder to exercise");
-        knut.burn(msg.sender, vows.checkPositionCost(optionId)); // TODO Need to verify amount available??
-        vault.withdraw(msg.sender, vows.checkPositionCreator(optionId), vows.checkPositionValue(optionId));
-        vows.burn(msg.sender, optionId);
+        (uint positionValue, uint positionCost, address positionCreator) = vows.checkPosition(optionId);
+//        vault.withdraw(msg.sender, positionCreator, positionValue);
+//        knut.burn(msg.sender, vows.checkPositionCost(optionId)); // TODO Need to verify amount available??
+//        vows.burn(msg.sender, optionId);
+        emit Exercise(msg.sender, optionId, positionCreator, positionCost, positionValue);
+//        emit Exercise(msg.sender);
     }
 }

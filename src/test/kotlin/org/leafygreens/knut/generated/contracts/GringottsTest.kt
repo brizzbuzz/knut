@@ -98,30 +98,35 @@ class GringottsTest {
 
   @Test
   internal fun `Gringotts allows positions to be exercised`() = runBlocking {
-//    val creds = generateFundedCreds(BigDecimal.ONE, web3j)
-//    val startingBalance = web3j.ethGetBalance(creds.address, DefaultBlockParameterName.LATEST).send().balance
-//
-//    val lockupAmount = Convert.toWei(BigDecimal(0.5), Convert.Unit.ETHER)
-//    val lockupReceipt = performSimpleLockup(creds, lockupAmount)
-//    val lockupEvent = gringotts.getLockupEvents(lockupReceipt).first()
-//
-//    // do
-//    val exerciseReceipt = performSimpleExercise(creds, lockupEvent.optionID)
-//    val exerciseEvent = gringotts.getExerciseEvents(exerciseReceipt).first()
-//
-//    // expect
-//    assertNotNull(lockupEvent)
-//    assertNotNull(exerciseEvent)
-//
-//    val lockupGasCost = lockupReceipt.gasUsed.times(contractGasProvider.gasPrice)
-//    val exerciseGasCost = exerciseReceipt.gasUsed.times(contractGasProvider.gasPrice)
-//
-//    val newBalance = startingBalance
-//        .minus(lockupGasCost)
-//        .minus(exerciseGasCost)
-//
-//    assertEquals(lockupEvent.value, exerciseEvent.value)
-//    assertEquals(lockupEvent.amount, exerciseEvent.burned)
+    val creds = generateFundedCreds(BigDecimal.ONE, web3j)
+    val startingBalance = web3j.ethGetBalance(creds.address, DefaultBlockParameterName.LATEST).send().balance
+
+    val lockupAmount = Convert.toWei(BigDecimal(0.5), Convert.Unit.ETHER)
+    val lockupReceipt = performSimpleLockup(creds, lockupAmount)
+    val lockupEvent = gringotts.getLockupEvents(lockupReceipt).first()
+
+    // do
+    val exerciseReceipt = performSimpleExercise(creds, lockupEvent.optionID)
+    val exerciseEvent = gringotts.getExerciseEvents(exerciseReceipt).first()
+
+    // expect
+
+    val lockupGasCost = lockupReceipt.gasUsed.times(contractGasProvider.gasPrice)
+    val exerciseGasCost = exerciseReceipt.gasUsed.times(contractGasProvider.gasPrice)
+
+    val newBalance = startingBalance
+        .minus(lockupGasCost)
+        .minus(exerciseGasCost)
+
+    assertNotNull(lockupEvent)
+    assertNotNull(exerciseEvent)
+
+    assertEquals(creds.address, exerciseEvent.from)
+    assertEquals(lockupEvent.optionID, exerciseEvent.optionId)
+    assertEquals(creds.address, exerciseEvent.creator)
+    assertEquals(lockupEvent.amount, exerciseEvent.value)
+    assertEquals(lockupEvent.value, exerciseEvent.burned)
+
 //    assertEquals(newBalance, web3j.ethGetBalance(creds.address, DefaultBlockParameterName.LATEST).send().balance)
   }
 

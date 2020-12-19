@@ -38,10 +38,10 @@ contract UnbreakableVow is ERC721, Ownable {
         _burn(tokenID);
     }
 
-    function checkPosition(uint256 tokenId) public view returns (uint256, uint256) {
+    function checkPosition(uint256 tokenId) public view returns (uint256, uint256, address) {
         require(_exists(tokenId), "ERC721Metadata: URI set of nonexistent token");
         // todo better to do?? -> Position memory position = _Positions[tokenId];
-        return (_Vows[tokenId].value, _Vows[tokenId].cost);
+        return (_Vows[tokenId].value, _Vows[tokenId].cost, _Vows[tokenId].creator);
     }
 
     function checkPositionValue(uint256 tokenId) public view returns (uint256) {
