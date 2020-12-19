@@ -1,13 +1,13 @@
 package org.leafygreens.knut.generated.contracts
 
+import java.lang.Exception
 import java.math.BigDecimal
 import java.math.BigInteger
-import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
+import org.junit.jupiter.api.assertThrows
 import org.leafygreens.knut.generated.contracts.TestUtils.generateFundedCreds
 import org.web3j.EVMTest
 import org.web3j.crypto.Credentials
@@ -16,6 +16,7 @@ import org.web3j.protocol.core.DefaultBlockParameterName
 import org.web3j.protocol.core.methods.request.Transaction
 import org.web3j.protocol.core.methods.response.TransactionReceipt
 import org.web3j.tx.TransactionManager
+import org.web3j.tx.exceptions.ContractCallException
 import org.web3j.tx.gas.ContractGasProvider
 import org.web3j.tx.gas.DefaultGasProvider
 import org.web3j.utils.Convert
@@ -34,7 +35,7 @@ class GringottsTest {
   private lateinit var vault713: Vault713
 
   @BeforeAll
-  fun deploy(
+  fun setup(
       web3j: Web3j,
       transactionManager: TransactionManager,
       contractGasProvider: ContractGasProvider
@@ -50,7 +51,7 @@ class GringottsTest {
   }
 
   @Test
-  internal fun `Gringotts mints knuts and creates an unbreakable vow`() = runBlocking {
+  fun `Can lockup funds in a vault`() {
     // when
     val creds = generateFundedCreds(BigDecimal.ONE, web3j)
     val startingBalance = web3j.ethGetBalance(creds.address, DefaultBlockParameterName.LATEST).send().balance
@@ -58,77 +59,149 @@ class GringottsTest {
 
     // do
     val lockupReceipt = performSimpleLockup(creds, lockupAmount)
-    val lockupEvent = gringotts.getLockupEvents(lockupReceipt).first()
-    val depositEvent = vault713.getDepositedEvents(lockupReceipt).first()
+    val lockupEvents = gringotts.getLockupEvents(lockupReceipt)
+    val depositEvents = vault713.getDepositedEvents(lockupReceipt)
 
     // expect
     val gasCost = lockupReceipt.gasUsed.times(contractGasProvider.gasPrice)
-
     val newBalance = startingBalance
         .minus(lockupAmount.toBigInteger())
         .minus(gasCost)
 
-    val position = vows.checkPosition(lockupEvent.optionID).send()
-
-    assertEquals(lockupAmount.toBigInteger(), depositEvent.weiAmount)
-    assertEquals(BigInteger.valueOf(500), knut.balanceOf(creds.address).send())
-    assertEquals(lockupAmount.toBigInteger(), position.component1())
-    assertEquals(BigInteger.valueOf(500), position.component2())
-    assertEquals(newBalance, web3j.ethGetBalance(creds.address, DefaultBlockParameterName.LATEST).send().balance)
+    assertEquals(1, lockupEvents.size, "There should only be one lockup event")
+    assertEquals(1, depositEvents.size, "There should only be one deposit event")
+    assertEquals(
+        newBalance,
+        web3j.ethGetBalance(creds.address, DefaultBlockParameterName.LATEST).send().balance,
+        "Account balance should be ($startingBalance - $gasCost - $lockupAmount)"
+    )
+    assertEquals(
+        lockupAmount.toBigInteger(),
+        vault713.depositsOf(creds.address).send(),
+        "$lockupAmount should be locked up by ${creds.address}"
+    )
   }
 
   @Test
-  internal fun `Gringotts allows multiple vows to be created`() = runBlocking {
+  fun `Can withdraw funds from a vault`() {
     // when
     val creds = generateFundedCreds(BigDecimal.ONE, web3j)
-    val lockupAmount = Convert.toWei(BigDecimal(0.25), Convert.Unit.ETHER)
+    val startingBalance = web3j.ethGetBalance(creds.address, DefaultBlockParameterName.LATEST).send().balance
+    val lockupAmount = Convert.toWei(BigDecimal(0.5), Convert.Unit.ETHER)
+    val lockupReceipt = performSimpleLockup(creds, lockupAmount)
+    val lockupEvent = gringotts.getLockupEvents(lockupReceipt).first()
 
     // do
-    val lockupReceiptA = performSimpleLockup(creds, lockupAmount)
-    val lockupReceiptB = performSimpleLockup(creds, lockupAmount)
+    val exerciseReceipt = performSimpleExercise(creds, lockupEvent.optionID)
+    val exerciseEvents = gringotts.getExerciseEvents(exerciseReceipt)
+    val withdrawEvents = vault713.getWithdrawnEvents(exerciseReceipt)
 
     // expect
-    val lockupEventA = gringotts.getLockupEvents(lockupReceiptA).first()
-    val lockupEventB = gringotts.getLockupEvents(lockupReceiptB).first()
+    val lockupGasCost = lockupReceipt.gasUsed.times(contractGasProvider.gasPrice)
+    val exerciseGasCost = exerciseReceipt.gasUsed.times(contractGasProvider.gasPrice)
+    val newBalance = startingBalance
+        .minus(lockupGasCost)
+        .minus(exerciseGasCost)
 
-    assertEquals(lockupEventA.value.plus(lockupEventB.value), knut.balanceOf(creds.address).send())
-    assertEquals(creds.address, vows.ownerOf(lockupEventA.optionID).send())
-    assertEquals(creds.address, vows.ownerOf(lockupEventB.optionID).send())
+    assertEquals(1, withdrawEvents.size, "There should only be one withdraw event")
+    assertEquals(1, exerciseEvents.size, "There should only be one exercise event")
+    assertEquals(BigInteger.ZERO, vault713.depositsOf(creds.address).send())
+    assertEquals(
+        newBalance,
+        web3j.ethGetBalance(creds.address, DefaultBlockParameterName.LATEST).send().balance,
+        "Account balance should be (starting - lockup gas - exercise gas)"
+    )
   }
 
   @Test
-  internal fun `Gringotts allows positions to be exercised`() = runBlocking {
-//    val creds = generateFundedCreds(BigDecimal.ONE, web3j)
-//    val startingBalance = web3j.ethGetBalance(creds.address, DefaultBlockParameterName.LATEST).send().balance
-//
-//    val lockupAmount = Convert.toWei(BigDecimal(0.5), Convert.Unit.ETHER)
-//    val lockupReceipt = performSimpleLockup(creds, lockupAmount)
-//    val lockupEvent = gringotts.getLockupEvents(lockupReceipt).first()
-//
-//    // do
-//    val exerciseReceipt = performSimpleExercise(creds, lockupEvent.optionID)
-//    val exerciseEvent = gringotts.getExerciseEvents(exerciseReceipt).first()
-//
-//    // expect
-//
-//    val lockupGasCost = lockupReceipt.gasUsed.times(contractGasProvider.gasPrice)
-//    val exerciseGasCost = exerciseReceipt.gasUsed.times(contractGasProvider.gasPrice)
-//
-//    val newBalance = startingBalance
-//        .minus(lockupGasCost)
-//        .minus(exerciseGasCost)
-//
-//    assertNotNull(lockupEvent)
-//    assertNotNull(exerciseEvent)
-//
-//    assertEquals(creds.address, exerciseEvent.from)
-//    assertEquals(lockupEvent.optionID, exerciseEvent.optionId)
-//    assertEquals(creds.address, exerciseEvent.creator)
-//    assertEquals(lockupEvent.amount, exerciseEvent.value)
-//    assertEquals(lockupEvent.value, exerciseEvent.burned)
-//
-//    assertEquals(newBalance, web3j.ethGetBalance(creds.address, DefaultBlockParameterName.LATEST).send().balance)
-//    assertEquals(BigInteger.ZERO, knut.balanceOf(creds.address).send())
+  fun `Can mint knuts on lockup`() {
+    // when
+    val creds = generateFundedCreds(BigDecimal.ONE, web3j)
+    val startingBalance = web3j.ethGetBalance(creds.address, DefaultBlockParameterName.LATEST).send().balance
+    val lockupAmount = Convert.toWei(BigDecimal(0.5), Convert.Unit.ETHER)
+
+    // do
+    val lockupReceipt = performSimpleLockup(creds, lockupAmount)
+    val lockupEvents = gringotts.getLockupEvents(lockupReceipt)
+    val mintEvents = knut.getMintEvents(lockupReceipt)
+
+    // expect
+    assertEquals(1, lockupEvents.size, "There should only be one lockup event")
+    assertEquals(1, mintEvents.size, "There should only be one mint event")
+    assertEquals(
+        BigInteger.valueOf(500),
+        knut.balanceOf(creds.address).send(),
+        "500 knut should be minted and given to ${creds.address}"
+    )
+  }
+
+  @Test
+  fun `Can burn knuts on exercise`() {
+    // when
+    val creds = generateFundedCreds(BigDecimal.ONE, web3j)
+    val lockupAmount = Convert.toWei(BigDecimal(0.5), Convert.Unit.ETHER)
+    val lockupReceipt = performSimpleLockup(creds, lockupAmount)
+    val lockupEvent = gringotts.getLockupEvents(lockupReceipt).first()
+
+    // do
+    val exerciseReceipt = performSimpleExercise(creds, lockupEvent.optionID)
+    val exerciseEvents = gringotts.getExerciseEvents(exerciseReceipt)
+    val burnEvents = knut.getBurnEvents(exerciseReceipt)
+
+    // expect
+    assertEquals(1, burnEvents.size, "There should only be one burn event")
+    assertEquals(1, exerciseEvents.size, "There should only be one exercise event")
+    assertEquals(
+        BigInteger.ZERO,
+        knut.balanceOf(creds.address).send(),
+        "All knut should be burned from ${creds.address}"
+    )
+  }
+
+  @Test
+  fun `Can create a vow on lockup`() {
+    // when
+    val creds = generateFundedCreds(BigDecimal.ONE, web3j)
+    val startingBalance = web3j.ethGetBalance(creds.address, DefaultBlockParameterName.LATEST).send().balance
+    val lockupAmount = Convert.toWei(BigDecimal(0.5), Convert.Unit.ETHER)
+
+    // do
+    val lockupReceipt = performSimpleLockup(creds, lockupAmount)
+    val lockupEvents = gringotts.getLockupEvents(lockupReceipt)
+    val mintEvents = vows.getSwearEvents(lockupReceipt)
+
+    // expect
+    val optionId = mintEvents.first().optionId
+
+    assertEquals(1, lockupEvents.size, "There should only be one lockup event")
+    assertEquals(1, mintEvents.size, "There should only be one deposit event")
+
+    assertEquals(lockupAmount.toBigInteger(), vows.checkPositionValue(optionId).send())
+    assertEquals(BigInteger.valueOf(500), vows.checkPositionCost(optionId).send())
+    assertEquals(creds.address, vows.ownerOf(optionId).send())
+  }
+
+  @Test
+  fun `Can burn a vow on exercise`() {
+    // when
+    val creds = generateFundedCreds(BigDecimal.ONE, web3j)
+    val lockupAmount = Convert.toWei(BigDecimal(0.5), Convert.Unit.ETHER)
+    val lockupReceipt = performSimpleLockup(creds, lockupAmount)
+    val lockupEvent = gringotts.getLockupEvents(lockupReceipt).first()
+
+    // do
+    val exerciseReceipt = performSimpleExercise(creds, lockupEvent.optionID)
+    val exerciseEvents = gringotts.getExerciseEvents(exerciseReceipt)
+    val burnEvents = vows.getFulfillEvents(exerciseReceipt)
+
+    // expect
+    val optionId = exerciseEvents.first().optionId
+    assertEquals(1, exerciseEvents.size, "There should only be one lockup event")
+    assertEquals(1, burnEvents.size, "There should only be one deposit event")
+    assertEquals(optionId, burnEvents.first().optionId, "Exercise option id should match burned id")
+    assertThrows<ContractCallException>("Burned token should have no owner") {
+      vows.ownerOf(optionId).send()
+    }
   }
 
   private fun performSimpleLockup(creds: Credentials, lockupAmount: BigDecimal): TransactionReceipt {
