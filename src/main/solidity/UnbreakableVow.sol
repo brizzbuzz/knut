@@ -23,6 +23,7 @@ contract UnbreakableVow is ERC721, Ownable {
 
     constructor() public ERC721("Unbreakable Vow", "UVOW") { }
 
+    // rename to swear
     function mint(address payee, uint256 value, uint256 cost) public onlyOwner returns (uint256) {
         _tokenIds.increment();
 
@@ -36,6 +37,7 @@ contract UnbreakableVow is ERC721, Ownable {
         return nextPopId;
     }
 
+    // mischief managed?
     function burn(address exerciser, uint256 tokenID) public onlyOwner {
         require(ownerOf(tokenID) == exerciser, "You must own this option in order to exercise");
         delete _Vows[tokenID];
@@ -43,6 +45,7 @@ contract UnbreakableVow is ERC721, Ownable {
         emit Fulfill(exerciser, tokenID);
     }
 
+    // position 🤮 rename
     function checkPosition(uint256 tokenId) public view returns (uint256, uint256, address) {
         require(_exists(tokenId), "ERC721Metadata: URI set of nonexistent token");
         // todo better to do?? -> Position memory position = _Positions[tokenId];

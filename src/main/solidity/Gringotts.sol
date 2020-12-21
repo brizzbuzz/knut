@@ -31,6 +31,7 @@ contract Gringotts {
         //    Oracle = UniswapAnchoredView(oracleAddress);
     }
 
+    // rename?
     function lockup() public payable {
         // TODO need to multiply price * amount * mintRatio
         vault.deposit(msg.sender, msg.value);
@@ -42,6 +43,7 @@ contract Gringotts {
     }
 
     // todo Can exerciser just be sender?  how to mark payable
+    // rename, exercise is too boring
     function exercise(uint256 optionId) public {
         require(vows.ownerOf(optionId) == msg.sender, "Must be option holder to exercise");
         (uint positionValue, uint positionCost, address positionCreator) = vows.checkPosition(optionId);

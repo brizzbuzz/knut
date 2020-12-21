@@ -13,6 +13,9 @@ object TestUtils {
 
   private val papaAccount = Credentials.create("0x8f2a55949038a9610f50fb23b5883af3b4ecb3c3bb792cbcefbd1542c692be63")
 
+  /**
+   * Generates credentials with no funds attached
+   */
   fun generateCreds(): Credentials {
     val password = UUID.randomUUID().toString()
     val walletDirectory = createTempDir()
@@ -23,17 +26,17 @@ object TestUtils {
   /**
    * Generates credentials that have a requested amount in ETH
    */
-  fun generateFundedCreds(amount: BigDecimal, web3j: Web3j): Credentials {
+  fun Web3j.generateFundedCreds(amount: BigDecimal): Credentials {
     val creds = generateCreds()
-    fundAccount(creds.address, amount, web3j)
+    fundAccount(creds.address, amount)
     return creds
   }
 
   /**
    * Amount in ETHER to send to account
    */
-  private fun fundAccount(address: String, amount: BigDecimal, web3j: Web3j) {
-    Transfer.sendFunds(web3j, papaAccount, address, amount, Convert.Unit.ETHER).send()
+  private fun Web3j.fundAccount(address: String, amount: BigDecimal) {
+    Transfer.sendFunds(this, papaAccount, address, amount, Convert.Unit.ETHER).send()
   }
 
 }

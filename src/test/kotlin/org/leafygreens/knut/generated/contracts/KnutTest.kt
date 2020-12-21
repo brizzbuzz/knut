@@ -27,13 +27,13 @@ class KnutTest {
   }
 
   @Test
-  internal fun `Contract has the correct name and symbol`() {
+  fun `Contract has the correct name and symbol`() {
     assertEquals("Knut", contract.name().send())
     assertEquals("KNUT", contract.symbol().send())
   }
 
   @Test
-  internal fun `Contract can mint new tokens to a provided address`() {
+  fun `Contract can mint new tokens to a provided address`() {
     // when
     val credentials = generateCreds()
     val address = credentials.address
@@ -47,7 +47,7 @@ class KnutTest {
   }
 
   @Test
-  internal fun `Contract can burn a subset of tokens`() {
+  fun `Contract can burn a subset of tokens`() {
     // when
     val credentials = generateCreds()
     val address = credentials.address
@@ -59,5 +59,20 @@ class KnutTest {
 
     // expect
     assertEquals(amount.divide(BigInteger.TWO), contract.balanceOf(address).send())
+  }
+
+  @Test
+  fun `Knuts are tradable`() {
+
+  }
+
+  @Test
+  fun `Only holder can trade knuts`() {
+
+  }
+
+  @Test
+  fun `Only contract owner can mint and burn Knuts`() {
+
   }
 }

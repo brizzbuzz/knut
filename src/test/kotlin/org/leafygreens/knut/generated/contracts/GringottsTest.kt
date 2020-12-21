@@ -1,8 +1,8 @@
 package org.leafygreens.knut.generated.contracts
 
-import java.lang.Exception
 import java.math.BigDecimal
 import java.math.BigInteger
+import java.util.Optional
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
@@ -14,6 +14,7 @@ import org.web3j.crypto.Credentials
 import org.web3j.protocol.Web3j
 import org.web3j.protocol.core.DefaultBlockParameterName
 import org.web3j.protocol.core.methods.request.Transaction
+import org.web3j.protocol.core.methods.response.EthGetTransactionReceipt
 import org.web3j.protocol.core.methods.response.TransactionReceipt
 import org.web3j.tx.TransactionManager
 import org.web3j.tx.exceptions.ContractCallException
@@ -53,8 +54,8 @@ class GringottsTest {
   @Test
   fun `Can lockup funds in a vault`() {
     // when
-    val creds = generateFundedCreds(BigDecimal.ONE, web3j)
-    val startingBalance = web3j.ethGetBalance(creds.address, DefaultBlockParameterName.LATEST).send().balance
+    val creds = web3j.generateFundedCreds(BigDecimal.ONE)
+    val startingBalance = creds.getCurrentBalance()
     val lockupAmount = Convert.toWei(BigDecimal(0.5), Convert.Unit.ETHER)
 
     // do
@@ -70,23 +71,15 @@ class GringottsTest {
 
     assertEquals(1, lockupEvents.size, "There should only be one lockup event")
     assertEquals(1, depositEvents.size, "There should only be one deposit event")
-    assertEquals(
-        newBalance,
-        web3j.ethGetBalance(creds.address, DefaultBlockParameterName.LATEST).send().balance,
-        "Account balance should be ($startingBalance - $gasCost - $lockupAmount)"
-    )
-    assertEquals(
-        lockupAmount.toBigInteger(),
-        vault713.depositsOf(creds.address).send(),
-        "$lockupAmount should be locked up by ${creds.address}"
-    )
+    assertEquals(newBalance, creds.getCurrentBalance(), "Account balance should be ($startingBalance - $gasCost - $lockupAmount)")
+    assertEquals(lockupAmount.toBigInteger(), vault713.depositsOf(creds.address).send(), "$lockupAmount should be locked up by ${creds.address}")
   }
 
   @Test
   fun `Can withdraw funds from a vault`() {
     // when
-    val creds = generateFundedCreds(BigDecimal.ONE, web3j)
-    val startingBalance = web3j.ethGetBalance(creds.address, DefaultBlockParameterName.LATEST).send().balance
+    val creds = web3j.generateFundedCreds(BigDecimal.ONE)
+    val startingBalance = creds.getCurrentBalance()
     val lockupAmount = Convert.toWei(BigDecimal(0.5), Convert.Unit.ETHER)
     val lockupReceipt = performSimpleLockup(creds, lockupAmount)
     val lockupEvent = gringotts.getLockupEvents(lockupReceipt).first()
@@ -106,18 +99,13 @@ class GringottsTest {
     assertEquals(1, withdrawEvents.size, "There should only be one withdraw event")
     assertEquals(1, exerciseEvents.size, "There should only be one exercise event")
     assertEquals(BigInteger.ZERO, vault713.depositsOf(creds.address).send())
-    assertEquals(
-        newBalance,
-        web3j.ethGetBalance(creds.address, DefaultBlockParameterName.LATEST).send().balance,
-        "Account balance should be (starting - lockup gas - exercise gas)"
-    )
+    assertEquals(newBalance, creds.getCurrentBalance(), "Account balance should be (starting - lockup gas - exercise gas)")
   }
 
   @Test
   fun `Can mint knuts on lockup`() {
     // when
-    val creds = generateFundedCreds(BigDecimal.ONE, web3j)
-    val startingBalance = web3j.ethGetBalance(creds.address, DefaultBlockParameterName.LATEST).send().balance
+    val creds = web3j.generateFundedCreds(BigDecimal.ONE)
     val lockupAmount = Convert.toWei(BigDecimal(0.5), Convert.Unit.ETHER)
 
     // do
@@ -138,7 +126,7 @@ class GringottsTest {
   @Test
   fun `Can burn knuts on exercise`() {
     // when
-    val creds = generateFundedCreds(BigDecimal.ONE, web3j)
+    val creds = web3j.generateFundedCreds(BigDecimal.ONE)
     val lockupAmount = Convert.toWei(BigDecimal(0.5), Convert.Unit.ETHER)
     val lockupReceipt = performSimpleLockup(creds, lockupAmount)
     val lockupEvent = gringotts.getLockupEvents(lockupReceipt).first()
@@ -161,8 +149,7 @@ class GringottsTest {
   @Test
   fun `Can create a vow on lockup`() {
     // when
-    val creds = generateFundedCreds(BigDecimal.ONE, web3j)
-    val startingBalance = web3j.ethGetBalance(creds.address, DefaultBlockParameterName.LATEST).send().balance
+    val creds = web3j.generateFundedCreds(BigDecimal.ONE)
     val lockupAmount = Convert.toWei(BigDecimal(0.5), Convert.Unit.ETHER)
 
     // do
@@ -184,7 +171,7 @@ class GringottsTest {
   @Test
   fun `Can burn a vow on exercise`() {
     // when
-    val creds = generateFundedCreds(BigDecimal.ONE, web3j)
+    val creds = web3j.generateFundedCreds(BigDecimal.ONE)
     val lockupAmount = Convert.toWei(BigDecimal(0.5), Convert.Unit.ETHER)
     val lockupReceipt = performSimpleLockup(creds, lockupAmount)
     val lockupEvent = gringotts.getLockupEvents(lockupReceipt).first()
@@ -204,9 +191,70 @@ class GringottsTest {
     }
   }
 
+  @Test
+  fun `Can create multiple lockups`() {
+    // when
+    val creds = web3j.generateFundedCreds(BigDecimal.ONE)
+    val startingBalance = creds.getCurrentBalance()
+    val lockupAmountA = Convert.toWei(BigDecimal(0.2), Convert.Unit.ETHER)
+    val lockupAmountB = Convert.toWei(BigDecimal(0.05), Convert.Unit.ETHER)
+
+    // do
+    val lockupReceiptA = performSimpleLockup(creds, lockupAmountA)
+    val lockupReceiptB = performSimpleLockup(creds, lockupAmountB)
+    val lockupEventA = gringotts.getLockupEvents(lockupReceiptA).first()
+    val lockupEventB = gringotts.getLockupEvents(lockupReceiptB).first()
+
+    // expect
+    val optionIdA = lockupEventA.optionID
+    val optionIdB = lockupEventB.optionID
+
+    assertEquals(creds.address, vows.ownerOf(optionIdA).send())
+    assertEquals(creds.address, vows.ownerOf(optionIdB).send())
+    assertEquals(lockupAmountA.plus(lockupAmountB).toBigInteger(), vault713.depositsOf(creds.address).send())
+
+    val newBalance = startingBalance
+        .minus(lockupReceiptA.gasUsed.times(contractGasProvider.gasPrice))
+        .minus(lockupReceiptB.gasUsed.times(contractGasProvider.gasPrice))
+        .minus(lockupAmountA.toBigInteger())
+        .minus(lockupAmountB.toBigInteger())
+
+    assertEquals(newBalance, creds.getCurrentBalance())
+  }
+
+  @Test
+  fun `Traded vows can be exercised`() {
+
+  }
+
+  @Test
+  fun `Traded vows cannot be exercised by creator`() {
+
+  }
+
+  @Test
+  fun `Vows cannot be exercised by non-holders`() {
+
+  }
+
+  @Test
+  fun `Cannot exercise without required Knuts`() {
+
+  }
+
+  @Test
+  fun `Double exercise cannot be performed`() {
+
+  }
+
+  @Test
+  fun `User cannot lock up more ETH than they have`() {
+
+  }
+
   private fun performSimpleLockup(creds: Credentials, lockupAmount: BigDecimal): TransactionReceipt {
     val lockup = gringotts.lockup().encodeFunctionCall()
-    val tx = createTx(creds.address, lockup, lockupAmount.toBigInteger())
+    val tx = createTx(creds.address, lockup, lockupAmount)
     return executeTransaction(tx)
   }
 
@@ -215,6 +263,8 @@ class GringottsTest {
     val tx = createTx(creds.address, encodedFunction)
     return executeTransaction(tx)
   }
+
+  private fun createTx(sender: String, encodedFunction: String, amount: BigDecimal) = createTx(sender, encodedFunction, amount.toBigInteger())
 
   private fun createTx(sender: String, encodedFunction: String, amount: BigInteger? = null): Transaction = Transaction.createFunctionCallTransaction(
       sender,
@@ -231,6 +281,7 @@ class GringottsTest {
     val txHash = txResponse.transactionHash
 
     do {
+      // TODO Might not be strictly necessary
       Thread.sleep(100)
     } while (web3j.ethGetTransactionReceipt(txHash).send().transactionReceipt.isEmpty)
 
@@ -238,4 +289,5 @@ class GringottsTest {
   }
 
   private fun Web3j.getLatestNonce(address: String): BigInteger = this.ethGetTransactionCount(address, DefaultBlockParameterName.LATEST).send().transactionCount
+  private fun Credentials.getCurrentBalance() = web3j.ethGetBalance(this.address, DefaultBlockParameterName.LATEST).send().balance
 }
