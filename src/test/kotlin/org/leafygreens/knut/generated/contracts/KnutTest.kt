@@ -13,9 +13,9 @@ import org.web3j.tx.gas.ContractGasProvider
 
 @EVMTest
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-class KnutTest {
+class KnutTest : ContractTest() {
 
-  private lateinit var contract: Knut
+  private lateinit var knut: Knut
 
   @BeforeAll
   fun deploy(
@@ -23,13 +23,17 @@ class KnutTest {
       transactionManager: TransactionManager,
       contractGasProvider: ContractGasProvider
   ) {
-    contract = Knut.deploy(web3j, transactionManager, contractGasProvider).send()
+    this.web3j = web3j
+    this.transactionManager = transactionManager
+    this.contractGasProvider = contractGasProvider
+
+    knut = Knut.deploy(web3j, transactionManager, contractGasProvider).send()
   }
 
   @Test
   fun `Contract has the correct name and symbol`() {
-    assertEquals("Knut", contract.name().send())
-    assertEquals("KNUT", contract.symbol().send())
+    assertEquals("Knut", knut.name().send())
+    assertEquals("KNUT", knut.symbol().send())
   }
 
   @Test
@@ -40,10 +44,10 @@ class KnutTest {
     val amount = BigInteger.valueOf(10000)
 
     // do
-    contract.mint(address, amount).send()
+    knut.mint(address, amount).send()
 
     // expect
-    assertEquals(amount, contract.balanceOf(address).send())
+    assertEquals(amount, knut.balanceOf(address).send())
   }
 
   @Test
@@ -52,23 +56,13 @@ class KnutTest {
     val credentials = generateCreds()
     val address = credentials.address
     val amount = BigInteger.valueOf(10000)
-    contract.mint(address, amount).send()
+    knut.mint(address, amount).send()
 
     // do
-    contract.burn(address, amount.divide(BigInteger.TWO)).send()
+    knut.burn(address, amount.divide(BigInteger.TWO)).send()
 
     // expect
-    assertEquals(amount.divide(BigInteger.TWO), contract.balanceOf(address).send())
-  }
-
-  @Test
-  fun `Knuts are tradable`() {
-
-  }
-
-  @Test
-  fun `Only holder can trade knuts`() {
-
+    assertEquals(amount.divide(BigInteger.TWO), knut.balanceOf(address).send())
   }
 
   @Test
